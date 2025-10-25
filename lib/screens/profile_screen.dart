@@ -7,22 +7,35 @@ import '../widgets/common/app_card.dart';
 import '../widgets/common/page_header.dart';
 import '../widgets/common/user_avatar.dart';
 import '../cubits/auth/auth_cubit.dart';
+import 'sign_in_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSizes.paddingLG),
-            child: BlocBuilder<AuthCubit, AuthState>(
-              builder: (context, authState) {
-                final user = authState is AuthAuthenticated
-                    ? authState.user
-                    : null;
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state is AuthInitial) {
+          // Navigate to sign in screen after logout
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const SignInScreen(),
+            ),
+            (route) => false, // Remove all previous routes
+          );
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSizes.paddingLG),
+              child: BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, authState) {
+                  final user = authState is AuthAuthenticated
+                      ? authState.user
+                      : null;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,6 +154,7 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 
