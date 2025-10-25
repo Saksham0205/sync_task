@@ -17,7 +17,6 @@ dependencies:
   
   # State Management
   flutter_bloc: ^9.1.1
-  hydrated_bloc: ^10.1.1
   equatable: ^2.0.5
 
   # authentication
@@ -25,9 +24,6 @@ dependencies:
   firebase_auth: ^6.1.1
   cloud_firestore: ^6.0.3
   firebase_storage: ^13.0.3
-
-  # Local Storage
-  path_provider: ^2.1.1
 
 dev_dependencies:
   flutter_test:

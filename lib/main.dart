@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'screens/sign_in_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'cubits/auth/auth_cubit.dart';
@@ -13,10 +13,8 @@ import 'cubits/friends/friends_cubit.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hydrated BLoC storage for state persistence
-  HydratedBloc.storage = await HydratedStorage.build(
-    storageDirectory: await getApplicationDocumentsDirectory(),
-  );
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const SyncTaskApp());
 }
@@ -29,15 +27,9 @@ class SyncTaskApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthCubit>(create: (context) => AuthCubit()),
-        BlocProvider<TasksCubit>(
-          create: (context) => TasksCubit()..loadSampleData(),
-        ),
-        BlocProvider<GroupsCubit>(
-          create: (context) => GroupsCubit()..loadSampleData(),
-        ),
-        BlocProvider<FriendsCubit>(
-          create: (context) => FriendsCubit()..loadSampleData(),
-        ),
+        BlocProvider<TasksCubit>(create: (context) => TasksCubit()),
+        BlocProvider<GroupsCubit>(create: (context) => GroupsCubit()),
+        BlocProvider<FriendsCubit>(create: (context) => FriendsCubit()),
       ],
       child: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, authState) {

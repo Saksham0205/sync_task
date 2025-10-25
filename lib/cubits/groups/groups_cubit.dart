@@ -1,123 +1,153 @@
-import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../models/group.dart';
 
 part 'groups_state.dart';
 
-class GroupsCubit extends HydratedCubit<GroupsState> {
-  GroupsCubit() : super(const GroupsState());
+class GroupsCubit extends Cubit<GroupsState> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+  StreamSubscription? _groupsSubscription;
+  final Map<String, StreamSubscription> _tasksSubscriptions = {};
 
-  void addGroup(String name) {
-    final group = TaskGroup(
-      id: 'group_${DateTime.now().millisecondsSinceEpoch}',
-      name: name,
-      memberCount: 1,
-      completedTasks: 0,
-      totalTasks: 0,
-    );
-    emit(state.copyWith(groups: [...state.groups, group]));
+  GroupsCubit() : super(const GroupsState()) {
+    _initializeGroupsListener();
   }
 
-  void addTaskToGroup(String groupId, String taskText) {
-    final updatedGroups = state.groups.map((group) {
-      if (group.id == groupId) {
-        final newTask = GroupTask(
-          id: 'gtask_${DateTime.now().millisecondsSinceEpoch}',
-          text: taskText,
-          createdBy: 'You',
-          completedBy: {'You': false, 'Mom': false, 'Dad': false},
-          priority: 'Medium',
-          createdAt: DateTime.now(),
-        );
-        return group.copyWith(
-          tasks: [...group.tasks, newTask],
-          totalTasks: group.totalTasks + 1,
-        );
+  void _initializeGroupsListener() {
+    _auth.authStateChanges().listen((user) {
+      if (user != null) {
+        _listenToGroups(user.uid);
+      } else {
+        _groupsSubscription?.cancel();
+        for (var sub in _tasksSubscriptions.values) {
+          sub.cancel();
+        }
+        _tasksSubscriptions.clear();
+        emit(const GroupsState());
       }
-      return group;
-    }).toList();
-    emit(state.copyWith(groups: updatedGroups));
+    });
   }
 
-  void toggleTaskCompletion(String groupId, String taskId, String member) {
-    final updatedGroups = state.groups.map((group) {
-      if (group.id == groupId) {
-        final updatedTasks = group.tasks.map((task) {
-          if (task.id == taskId) {
-            final newCompletedBy = Map<String, bool>.from(task.completedBy);
-            newCompletedBy[member] = !(newCompletedBy[member] ?? false);
-            return task.copyWith(completedBy: newCompletedBy);
-          }
-          return task;
-        }).toList();
-
-        // Recalculate completed tasks
-        final completedCount = updatedTasks
-            .where((task) => task.completedBy.values.every((v) => v))
-            .length;
-
-        return group.copyWith(
-          tasks: updatedTasks,
-          completedTasks: completedCount,
-        );
+  void _listenToGroups(String userId) {
+    _groupsSubscription?.cancel();
+    _groupsSubscription = _firestore
+        .collection('groups')
+        .where('members', arrayContains: userId)
+        .snapshots()
+        .listen((snapshot) {
+      final groups = snapshot.docs.map((doc) {
+        return TaskGroup.fromJson({...doc.data(), 'id': doc.id});
+      }).toList();
+      
+      // Listen to tasks for each group
+      for (var group in groups) {
+        _listenToGroupTasks(group.id);
       }
-      return group;
-    }).toList();
-    emit(state.copyWith(groups: updatedGroups));
+      
+      emit(state.copyWith(groups: groups));
+    });
   }
 
-  void loadSampleData() {
-    if (state.groups.isEmpty) {
-      final sampleGroups = [
-        TaskGroup(
-          id: 'group_1',
-          name: 'Family Tasks',
-          memberCount: 3,
-          completedTasks: 2,
-          totalTasks: 5,
-          tasks: [
-            GroupTask(
-              id: 'gtask_1',
-              text: 'Clean the house',
-              createdBy: 'You',
-              completedBy: {'You': true, 'Mom': true, 'Dad': false},
-              priority: 'High',
-              createdAt: DateTime.now(),
-            ),
-            GroupTask(
-              id: 'gtask_2',
-              text: 'Buy groceries for dinner',
-              createdBy: 'Mom',
-              completedBy: {'You': false, 'Mom': true, 'Dad': false},
-              priority: 'Medium',
-              createdAt: DateTime.now(),
-            ),
-            GroupTask(
-              id: 'gtask_3',
-              text: 'Plan weekend trip',
-              createdBy: 'Dad',
-              completedBy: {'You': false, 'Mom': false, 'Dad': false},
-              priority: 'Low',
-              createdAt: DateTime.now(),
-            ),
-          ],
-        ),
-        TaskGroup(
-          id: 'group_2',
-          name: 'Work Project',
-          memberCount: 4,
-          completedTasks: 6,
-          totalTasks: 8,
-        ),
-        TaskGroup(
-          id: 'group_3',
-          name: 'Study Group',
-          memberCount: 2,
-          completedTasks: 1,
-          totalTasks: 3,
-        ),
-      ];
-      emit(state.copyWith(groups: sampleGroups));
+  void _listenToGroupTasks(String groupId) {
+    _tasksSubscriptions[groupId]?.cancel();
+    _tasksSubscriptions[groupId] = _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('tasks')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      final tasks = snapshot.docs.map((doc) {
+        return GroupTask.fromJson({...doc.data(), 'id': doc.id});
+      }).toList();
+
+      // Update the specific group's tasks
+      final updatedGroups = state.groups.map((group) {
+        if (group.id == groupId) {
+          final completedCount = tasks
+              .where((task) => task.completedBy.values.every((v) => v))
+              .length;
+          return group.copyWith(
+            tasks: tasks,
+            totalTasks: tasks.length,
+            completedTasks: completedCount,
+          );
+        }
+        return group;
+      }).toList();
+      
+      emit(state.copyWith(groups: updatedGroups));
+    });
+  }
+
+  Future<void> addGroup(String name) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final groupData = {
+        'name': name,
+        'memberCount': 1,
+        'completedTasks': 0,
+        'totalTasks': 0,
+        'members': [user.uid],
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+      
+      await _firestore.collection('groups').add(groupData);
+    } catch (e) {
+      print('Error adding group: $e');
+    }
+  }
+
+  Future<void> addTaskToGroup(String groupId, String taskText) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // Get current user's username
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final username = userDoc.data()?['username'] ?? 'You';
+
+      final taskData = {
+        'text': taskText,
+        'createdBy': username,
+        'completedBy': {username: false},
+        'priority': 'Medium',
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+      
+      await _firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('tasks')
+          .add(taskData);
+    } catch (e) {
+      print('Error adding task to group: $e');
+    }
+  }
+
+  Future<void> toggleTaskCompletion(String groupId, String taskId, String member) async {
+    try {
+      final taskRef = _firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('tasks')
+          .doc(taskId);
+      
+      final taskDoc = await taskRef.get();
+      if (taskDoc.exists) {
+        final completedBy = Map<String, bool>.from(taskDoc.data()?['completedBy'] ?? {});
+        completedBy[member] = !(completedBy[member] ?? false);
+        
+        await taskRef.update({'completedBy': completedBy});
+      }
+    } catch (e) {
+      print('Error toggling task completion: $e');
     }
   }
 
@@ -130,19 +160,12 @@ class GroupsCubit extends HydratedCubit<GroupsState> {
   }
 
   @override
-  GroupsState? fromJson(Map<String, dynamic> json) {
-    try {
-      final groups = (json['groups'] as List<dynamic>)
-          .map((group) => TaskGroup.fromJson(group as Map<String, dynamic>))
-          .toList();
-      return GroupsState(groups: groups);
-    } catch (_) {
-      return null;
+  Future<void> close() {
+    _groupsSubscription?.cancel();
+    for (var sub in _tasksSubscriptions.values) {
+      sub.cancel();
     }
-  }
-
-  @override
-  Map<String, dynamic>? toJson(GroupsState state) {
-    return {'groups': state.groups.map((group) => group.toJson()).toList()};
+    _tasksSubscriptions.clear();
+    return super.close();
   }
 }

@@ -1,77 +1,106 @@
-import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../models/task.dart';
 
 part 'tasks_state.dart';
 
-class TasksCubit extends HydratedCubit<TasksState> {
-  TasksCubit() : super(const TasksState());
+class TasksCubit extends Cubit<TasksState> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+  StreamSubscription? _tasksSubscription;
 
-  void addTask(String text) {
-    final task = Task(
-      id: 'task_${DateTime.now().millisecondsSinceEpoch}',
-      text: text,
-      createdAt: DateTime.now(),
-    );
-    emit(state.copyWith(tasks: [...state.tasks, task]));
+  TasksCubit() : super(const TasksState()) {
+    _initializeTasksListener();
   }
 
-  void toggleTask(String taskId) {
-    final updatedTasks = state.tasks.map((task) {
-      if (task.id == taskId) {
-        return task.copyWith(completed: !task.completed);
+  void _initializeTasksListener() {
+    _auth.authStateChanges().listen((user) {
+      if (user != null) {
+        _listenToTasks(user.uid);
+      } else {
+        _tasksSubscription?.cancel();
+        emit(const TasksState());
       }
-      return task;
-    }).toList();
-    emit(state.copyWith(tasks: updatedTasks));
+    });
   }
 
-  void deleteTask(String taskId) {
-    final updatedTasks = state.tasks
-        .where((task) => task.id != taskId)
-        .toList();
-    emit(state.copyWith(tasks: updatedTasks));
+  void _listenToTasks(String userId) {
+    _tasksSubscription?.cancel();
+    _tasksSubscription = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('tasks')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      final tasks = snapshot.docs.map((doc) {
+        return Task.fromJson({...doc.data(), 'id': doc.id});
+      }).toList();
+      emit(state.copyWith(tasks: tasks));
+    });
   }
 
-  void loadSampleData() {
-    if (state.tasks.isEmpty) {
-      final sampleTasks = [
-        Task(
-          id: 'task_1',
-          text: 'Complete project proposal',
-          createdAt: DateTime.now(),
-        ),
-        Task(
-          id: 'task_2',
-          text: 'Buy groceries',
-          completed: true,
-          createdAt: DateTime.now(),
-        ),
-        Task(id: 'task_3', text: 'Call mom', createdAt: DateTime.now()),
-        Task(
-          id: 'task_4',
-          text: 'Schedule dentist appointment',
-          createdAt: DateTime.now(),
-        ),
-      ];
-      emit(state.copyWith(tasks: sampleTasks));
-    }
-  }
+  Future<void> addTask(String text) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
 
-  @override
-  TasksState? fromJson(Map<String, dynamic> json) {
     try {
-      final tasks = (json['tasks'] as List<dynamic>)
-          .map((task) => Task.fromJson(task as Map<String, dynamic>))
-          .toList();
-      return TasksState(tasks: tasks);
-    } catch (_) {
-      return null;
+      final task = Task(
+        id: '',
+        text: text,
+        createdAt: DateTime.now(),
+      );
+      
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('tasks')
+          .add(task.toJson());
+    } catch (e) {
+      // Handle error - could emit error state if needed
+      print('Error adding task: $e');
+    }
+  }
+
+  Future<void> toggleTask(String taskId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final task = state.tasks.firstWhere((t) => t.id == taskId);
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('tasks')
+          .doc(taskId)
+          .update({'completed': !task.completed});
+    } catch (e) {
+      print('Error toggling task: $e');
+    }
+  }
+
+  Future<void> deleteTask(String taskId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('tasks')
+          .doc(taskId)
+          .delete();
+    } catch (e) {
+      print('Error deleting task: $e');
     }
   }
 
   @override
-  Map<String, dynamic>? toJson(TasksState state) {
-    return {'tasks': state.tasks.map((task) => task.toJson()).toList()};
+  Future<void> close() {
+    _tasksSubscription?.cancel();
+    return super.close();
   }
 }

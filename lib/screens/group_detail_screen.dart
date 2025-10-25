@@ -128,7 +128,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E1E1E),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,7 +216,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             color: const Color(0xFF1E1E1E),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.withValues(alpha: 0.1),
                             ),
                           ),
                           child: Column(
@@ -273,7 +275,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                     decoration: BoxDecoration(
                                       color: _getPriorityColor(
                                         task.priority,
-                                      ).withOpacity(0.2),
+                                      ).withValues(alpha: 0.2),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Row(
@@ -336,7 +338,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                       color: entry.value
                                           ? const Color(
                                               0xFF00D95F,
-                                            ).withOpacity(0.2)
+                                            ).withValues(alpha: 0.2)
                                           : const Color(0xFF2A2A2A),
                                       borderRadius: BorderRadius.circular(6),
                                     ),

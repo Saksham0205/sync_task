@@ -91,7 +91,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                             color: const Color(0xFF1E1E1E),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.withValues(alpha: 0.1),
                             ),
                           ),
                           child: Row(

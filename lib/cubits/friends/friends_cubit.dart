@@ -1,63 +1,152 @@
-import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../models/friend.dart';
 
 part 'friends_state.dart';
 
-class FriendsCubit extends HydratedCubit<FriendsState> {
-  FriendsCubit() : super(const FriendsState());
+class FriendsCubit extends Cubit<FriendsState> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+  StreamSubscription? _friendsSubscription;
 
-  void addFriend(Friend friend) {
-    emit(state.copyWith(friends: [...state.friends, friend]));
+  FriendsCubit() : super(const FriendsState()) {
+    _initializeFriendsListener();
   }
 
-  void removeFriend(String friendId) {
-    final updatedFriends = state.friends
-        .where((friend) => friend.id != friendId)
-        .toList();
-    emit(state.copyWith(friends: updatedFriends));
+  void _initializeFriendsListener() {
+    _auth.authStateChanges().listen((user) {
+      if (user != null) {
+        _listenToFriends(user.uid);
+      } else {
+        _friendsSubscription?.cancel();
+        emit(const FriendsState());
+      }
+    });
   }
 
-  void loadSampleData() {
-    if (state.friends.isEmpty) {
-      final sampleFriends = [
-        const Friend(
-          id: 'friend_1',
-          username: '@alice_smith',
-          email: 'alice@example.com',
-          avatarLetter: 'A',
-        ),
-        const Friend(
-          id: 'friend_2',
-          username: '@bob_jones',
-          email: 'bob@example.com',
-          avatarLetter: 'B',
-        ),
-        const Friend(
-          id: 'friend_3',
-          username: '@charlie_brown',
-          email: 'charlie@example.com',
-          avatarLetter: 'C',
-        ),
-      ];
-      emit(state.copyWith(friends: sampleFriends));
-    }
-  }
+  void _listenToFriends(String userId) {
+    _friendsSubscription?.cancel();
+    _friendsSubscription = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('friends')
+        .snapshots()
+        .listen((snapshot) async {
+      // Get friend details from users collection
+      final friendIds = snapshot.docs.map((doc) => doc.id).toList();
+      
+      if (friendIds.isEmpty) {
+        emit(const FriendsState());
+        return;
+      }
 
-  @override
-  FriendsState? fromJson(Map<String, dynamic> json) {
-    try {
-      final friends = (json['friends'] as List<dynamic>)
-          .map((friend) => Friend.fromJson(friend as Map<String, dynamic>))
+      // Fetch friend details
+      final friendDocs = await Future.wait(
+        friendIds.map((id) => _firestore.collection('users').doc(id).get()),
+      );
+
+      final friends = friendDocs
+          .where((doc) => doc.exists)
+          .map((doc) => Friend.fromJson({...doc.data()!, 'id': doc.id}))
           .toList();
-      return FriendsState(friends: friends);
-    } catch (_) {
-      return null;
+
+      emit(state.copyWith(friends: friends));
+    });
+  }
+
+  Future<void> addFriendByEmail(String email) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // Find user by email
+      final userQuery = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+
+      if (userQuery.docs.isEmpty) {
+        print('User not found with email: $email');
+        return;
+      }
+
+      final friendDoc = userQuery.docs.first;
+      final friendId = friendDoc.id;
+
+      // Don't add yourself as a friend
+      if (friendId == user.uid) {
+        print('Cannot add yourself as a friend');
+        return;
+      }
+
+      // Add friend to current user's friends
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('friends')
+          .doc(friendId)
+          .set({'addedAt': FieldValue.serverTimestamp()});
+
+      // Add current user to friend's friends (mutual friendship)
+      await _firestore
+          .collection('users')
+          .doc(friendId)
+          .collection('friends')
+          .doc(user.uid)
+          .set({'addedAt': FieldValue.serverTimestamp()});
+    } catch (e) {
+      print('Error adding friend: $e');
+    }
+  }
+
+  Future<void> addFriend(Friend friend) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('friends')
+          .doc(friend.id)
+          .set({'addedAt': FieldValue.serverTimestamp()});
+    } catch (e) {
+      print('Error adding friend: $e');
+    }
+  }
+
+  Future<void> removeFriend(String friendId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // Remove from current user's friends
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('friends')
+          .doc(friendId)
+          .delete();
+
+      // Remove current user from friend's friends
+      await _firestore
+          .collection('users')
+          .doc(friendId)
+          .collection('friends')
+          .doc(user.uid)
+          .delete();
+    } catch (e) {
+      print('Error removing friend: $e');
     }
   }
 
   @override
-  Map<String, dynamic>? toJson(FriendsState state) {
-    return {'friends': state.friends.map((friend) => friend.toJson()).toList()};
+  Future<void> close() {
+    _friendsSubscription?.cancel();
+    return super.close();
   }
 }
