@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
 import '../constants/app_text_styles.dart';
@@ -19,6 +21,38 @@ class GroupDetailScreen extends StatefulWidget {
 
 class _GroupDetailScreenState extends State<GroupDetailScreen> {
   final _taskController = TextEditingController();
+  String? _currentUsername;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUsername();
+    _cleanupTaskData();
+  }
+
+  Future<void> _loadCurrentUsername() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        setState(() {
+          _currentUsername = userDoc.data()?['username'] ?? 'You';
+        });
+      } catch (e) {
+        setState(() {
+          _currentUsername = 'You';
+        });
+      }
+    }
+  }
+
+  Future<void> _cleanupTaskData() async {
+    // Clean up any tasks that have both "You" and the actual username
+    await context.read<GroupsCubit>().cleanupTaskMemberships(widget.groupId);
+  }
 
   @override
   void dispose() {
@@ -180,7 +214,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             .where((v) => v)
                             .length;
                         final totalMembers = task.completedBy.length;
-                        final isCompleted = task.completedBy['You'] ?? false;
+                        final currentUser = _currentUsername ?? 'You';
+                        final isCompleted =
+                            task.completedBy[currentUser] ?? false;
 
                         return AppCard(
                           margin: const EdgeInsets.only(
@@ -193,13 +229,17 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                 children: [
                                   CustomCheckbox(
                                     isChecked: isCompleted,
-                                    onTap: () => context
-                                        .read<GroupsCubit>()
-                                        .toggleTaskCompletion(
-                                          widget.groupId,
-                                          task.id,
-                                          'You',
-                                        ),
+                                    onTap: () {
+                                      if (_currentUsername != null) {
+                                        context
+                                            .read<GroupsCubit>()
+                                            .toggleTaskCompletion(
+                                              widget.groupId,
+                                              task.id,
+                                              _currentUsername!,
+                                            );
+                                      }
+                                    },
                                   ),
                                   const SizedBox(width: AppSizes.paddingSM),
                                   Expanded(
