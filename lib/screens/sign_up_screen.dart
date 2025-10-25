@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'main_navigation_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../cubits/auth/auth_cubit.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -22,10 +23,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _signUp() {
-    // For now, just navigate to the main screen
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-    );
+    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (username.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
+      context.read<AuthCubit>().signUp(username, email, password);
+    }
   }
 
   @override

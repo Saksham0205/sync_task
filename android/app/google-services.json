@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "862482110765",
+    "project_id": "synctask-be1c4",
+    "storage_bucket": "synctask-be1c4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:862482110765:android:6f9933517871bd4e9bdba4",
+        "android_client_info": {
+          "package_name": "com.example.sync_task"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "862482110765-65e15kdms0tmc7vbugdbjsj2s16epi9c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJJqbge7LsEW8gLJqJGFZebHtUH8QvbxI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "862482110765-65e15kdms0tmc7vbugdbjsj2s16epi9c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
