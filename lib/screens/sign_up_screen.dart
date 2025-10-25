@@ -4,6 +4,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
 import '../constants/app_text_styles.dart';
 import '../cubits/auth/auth_cubit.dart';
+import 'main_navigation_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -32,6 +33,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     if (username.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
       context.read<AuthCubit>().signUp(username, email, password);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const MainNavigationScreen(),
+        ),
+      );
     }
   }
 

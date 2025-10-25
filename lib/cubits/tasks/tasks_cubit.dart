@@ -36,14 +36,17 @@ class TasksCubit extends Cubit<TasksState> {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((snapshot) {
-      final tasks = snapshot.docs.map((doc) {
-        return Task.fromJson({...doc.data(), 'id': doc.id});
-      }).toList();
-      emit(state.copyWith(tasks: tasks));
-    });
+          final tasks = snapshot.docs.map((doc) {
+            return Task.fromJson({...doc.data(), 'id': doc.id});
+          }).toList();
+          emit(state.copyWith(tasks: tasks));
+        });
   }
 
-  Future<void> addTask(String text) async {
+  Future<void> addTask(
+    String text, {
+    TaskPriority priority = TaskPriority.medium,
+  }) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
@@ -52,8 +55,9 @@ class TasksCubit extends Cubit<TasksState> {
         id: '',
         text: text,
         createdAt: DateTime.now(),
+        priority: priority,
       );
-      
+
       await _firestore
           .collection('users')
           .doc(user.uid)
@@ -79,6 +83,22 @@ class TasksCubit extends Cubit<TasksState> {
           .update({'completed': !task.completed});
     } catch (e) {
       print('Error toggling task: $e');
+    }
+  }
+
+  Future<void> updateTaskPriority(String taskId, TaskPriority priority) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('tasks')
+          .doc(taskId)
+          .update({'priority': priority.name});
+    } catch (e) {
+      print('Error updating task priority: $e');
     }
   }
 

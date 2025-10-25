@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../models/group.dart';
+import '../../models/task.dart';
 
 part 'groups_state.dart';
 
@@ -104,7 +105,11 @@ class GroupsCubit extends Cubit<GroupsState> {
     }
   }
 
-  Future<void> addTaskToGroup(String groupId, String taskText) async {
+  Future<void> addTaskToGroup(
+    String groupId,
+    String taskText, {
+    TaskPriority priority = TaskPriority.medium,
+  }) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
@@ -117,7 +122,7 @@ class GroupsCubit extends Cubit<GroupsState> {
         'text': taskText,
         'createdBy': username,
         'completedBy': {username: false},
-        'priority': 'Medium',
+        'priority': priority.name,
         'createdAt': DateTime.now().toIso8601String(),
       };
 
@@ -128,6 +133,23 @@ class GroupsCubit extends Cubit<GroupsState> {
           .add(taskData);
     } catch (e) {
       print('Error adding task to group: $e');
+    }
+  }
+
+  Future<void> updateTaskPriority(
+    String groupId,
+    String taskId,
+    TaskPriority priority,
+  ) async {
+    try {
+      await _firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('tasks')
+          .doc(taskId)
+          .update({'priority': priority.name});
+    } catch (e) {
+      print('Error updating task priority: $e');
     }
   }
 

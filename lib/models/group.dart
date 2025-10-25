@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'task.dart';
 
 class TaskGroup extends Equatable {
   final String id;
@@ -77,7 +78,7 @@ class GroupTask extends Equatable {
   final String text;
   final String createdBy;
   final Map<String, bool> completedBy;
-  final String priority;
+  final TaskPriority priority;
   final DateTime createdAt;
 
   const GroupTask({
@@ -85,7 +86,7 @@ class GroupTask extends Equatable {
     required this.text,
     required this.createdBy,
     required this.completedBy,
-    required this.priority,
+    this.priority = TaskPriority.medium,
     required this.createdAt,
   });
 
@@ -94,7 +95,7 @@ class GroupTask extends Equatable {
     String? text,
     String? createdBy,
     Map<String, bool>? completedBy,
-    String? priority,
+    TaskPriority? priority,
     DateTime? createdAt,
   }) {
     return GroupTask(
@@ -113,7 +114,7 @@ class GroupTask extends Equatable {
       'text': text,
       'createdBy': createdBy,
       'completedBy': completedBy,
-      'priority': priority,
+      'priority': priority.name,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -124,7 +125,10 @@ class GroupTask extends Equatable {
       text: json['text'] as String,
       createdBy: json['createdBy'] as String,
       completedBy: Map<String, bool>.from(json['completedBy'] as Map),
-      priority: json['priority'] as String,
+      priority: TaskPriority.values.firstWhere(
+        (p) => p.name == (json['priority'] as String?)?.toLowerCase(),
+        orElse: () => TaskPriority.medium,
+      ),
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }

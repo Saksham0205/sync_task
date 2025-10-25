@@ -7,8 +7,9 @@ import '../constants/app_sizes.dart';
 import '../constants/app_text_styles.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/custom_checkbox.dart';
-import '../widgets/common/priority_badge.dart';
 import '../cubits/groups/groups_cubit.dart';
+import '../models/task.dart';
+import '../models/group.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final String groupId;
@@ -22,6 +23,7 @@ class GroupDetailScreen extends StatefulWidget {
 class _GroupDetailScreenState extends State<GroupDetailScreen> {
   final _taskController = TextEditingController();
   String? _currentUsername;
+  TaskPriority _selectedPriority = TaskPriority.medium;
 
   @override
   void initState() {
@@ -65,9 +67,87 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       context.read<GroupsCubit>().addTaskToGroup(
         widget.groupId,
         _taskController.text,
+        priority: _selectedPriority,
       );
       _taskController.clear();
+      setState(() {
+        _selectedPriority = TaskPriority.medium;
+      });
     }
+  }
+
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.low:
+        return Colors.blue;
+      case TaskPriority.medium:
+        return Colors.orange;
+      case TaskPriority.high:
+        return Colors.deepOrange;
+      case TaskPriority.critical:
+        return Colors.red;
+    }
+  }
+
+  IconData _getPriorityIcon(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.low:
+        return Icons.arrow_downward;
+      case TaskPriority.medium:
+        return Icons.drag_handle;
+      case TaskPriority.high:
+        return Icons.arrow_upward;
+      case TaskPriority.critical:
+        return Icons.priority_high;
+    }
+  }
+
+  void _showPriorityMenu(BuildContext context, GroupTask task) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSizes.radiusLG),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppSizes.paddingMD),
+                child: const Text('Set Priority', style: AppTextStyles.h3),
+              ),
+              ...TaskPriority.values.map((priority) {
+                return ListTile(
+                  leading: Icon(
+                    _getPriorityIcon(priority),
+                    color: _getPriorityColor(priority),
+                  ),
+                  title: Text(
+                    priority.displayName,
+                    style: AppTextStyles.bodyLarge,
+                  ),
+                  selected: task.priority == priority,
+                  selectedTileColor: AppColors.surfaceDark.withOpacity(0.5),
+                  onTap: () {
+                    context.read<GroupsCubit>().updateTaskPriority(
+                      widget.groupId,
+                      task.id,
+                      priority,
+                    );
+                    Navigator.pop(context);
+                  },
+                );
+              }).toList(),
+              const SizedBox(height: AppSizes.paddingSM),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -183,6 +263,49 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: AppSizes.paddingSM),
+                        Text(
+                          'Priority',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: AppSizes.paddingXS),
+                        Wrap(
+                          spacing: AppSizes.paddingSM,
+                          children: TaskPriority.values.map((priority) {
+                            final isSelected = _selectedPriority == priority;
+                            return FilterChip(
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _getPriorityIcon(priority),
+                                    size: 16,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : _getPriorityColor(priority),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(priority.displayName),
+                                ],
+                              ),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  _selectedPriority = priority;
+                                });
+                              },
+                              backgroundColor: AppColors.surfaceDark,
+                              selectedColor: _getPriorityColor(priority),
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
+                              ),
+                            );
+                          }).toList(),
+                        ),
                         const SizedBox(height: AppSizes.paddingMD),
                         SizedBox(
                           width: double.infinity,
@@ -248,7 +371,34 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                       style: AppTextStyles.bodyLarge,
                                     ),
                                   ),
-                                  PriorityBadge(priority: task.priority),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.flag_outlined,
+                                      color: _getPriorityColor(task.priority),
+                                    ),
+                                    onPressed: () =>
+                                        _showPriorityMenu(context, task),
+                                    tooltip: 'Change priority',
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSizes.paddingXS),
+                              Row(
+                                children: [
+                                  Icon(
+                                    _getPriorityIcon(task.priority),
+                                    size: 14,
+                                    color: _getPriorityColor(task.priority),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    task.priority.displayName,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _getPriorityColor(task.priority),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: AppSizes.paddingSM),
