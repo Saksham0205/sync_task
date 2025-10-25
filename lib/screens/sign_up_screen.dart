@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_sizes.dart';
+import '../constants/app_text_styles.dart';
 import '../cubits/auth/auth_cubit.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -37,65 +40,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(AppSizes.paddingLG),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 60),
-              const Text(
-                'Create Account',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.paddingXXXL),
+              const Text('Create Account', style: AppTextStyles.h1),
+              const SizedBox(height: AppSizes.paddingXS),
               const Text(
                 'Join SyncTask to start managing tasks with friends',
-                style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                style: AppTextStyles.caption,
               ),
-              const SizedBox(height: 48),
-              const Text(
-                'Username',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.paddingXXL),
+              const Text('Username', style: AppTextStyles.label),
+              const SizedBox(height: AppSizes.paddingXS),
               TextField(
                 controller: _usernameController,
                 decoration: const InputDecoration(
                   hintText: 'Choose a username',
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'Email',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.paddingLG),
+              const Text('Email', style: AppTextStyles.label),
+              const SizedBox(height: AppSizes.paddingXS),
               TextField(
                 controller: _emailController,
                 decoration: const InputDecoration(hintText: 'Enter your email'),
                 keyboardType: TextInputType.emailAddress,
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'Password',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.paddingLG),
+              const Text('Password', style: AppTextStyles.label),
+              const SizedBox(height: AppSizes.paddingXS),
               TextField(
                 controller: _passwordController,
                 decoration: const InputDecoration(
@@ -103,7 +78,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 obscureText: true,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSizes.paddingXL),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -111,14 +86,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: const Text('Create Account'),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSizes.paddingLG),
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
                       'Already have an account? ',
-                      style: TextStyle(color: Color(0xFF999999)),
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
                     GestureDetector(
                       onTap: () {
@@ -127,7 +102,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       child: const Text(
                         'Sign In',
                         style: TextStyle(
-                          color: Color(0xFF00D95F),
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

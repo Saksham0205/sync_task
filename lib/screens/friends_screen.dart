@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_sizes.dart';
+import '../constants/app_text_styles.dart';
+import '../widgets/common/app_card.dart';
+import '../widgets/common/page_header.dart';
+import '../widgets/common/user_avatar.dart';
 import '../cubits/friends/friends_cubit.dart';
 
 class FriendsScreen extends StatefulWidget {
@@ -23,111 +29,60 @@ class _FriendsScreenState extends State<FriendsScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(AppSizes.paddingLG),
           child: BlocBuilder<FriendsCubit, FriendsState>(
             builder: (context, state) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Friends',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  PageHeader(
+                    title: 'Friends',
+                    subtitle: '${state.friends.length} friends',
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${state.friends.length} friends',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF999999),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Search Users',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSizes.paddingLG),
+                  const Text('Search Users', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: AppSizes.paddingSM),
                   TextField(
                     controller: _searchController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'Search by username',
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search,
-                        color: Color(0xFF666666),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'My Friends',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSizes.paddingLG),
+                  const Text('My Friends', style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: AppSizes.paddingMD),
                   Expanded(
                     child: ListView.builder(
                       itemCount: state.friends.length,
                       itemBuilder: (context, index) {
                         final friend = state.friends[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E1E1E),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.1),
-                            ),
+                        return AppCard(
+                          margin: const EdgeInsets.only(
+                            bottom: AppSizes.paddingSM,
                           ),
                           child: Row(
                             children: [
-                              CircleAvatar(
-                                radius: 24,
-                                backgroundColor: const Color(0xFF00D95F),
-                                child: Text(
-                                  friend.avatarLetter,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                              UserAvatar(
+                                letter: friend.avatarLetter,
+                                radius: AppSizes.avatarSM,
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: AppSizes.paddingSM),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       friend.username,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
+                                      style: AppTextStyles.bodyLarge,
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: AppSizes.paddingXXS),
                                     Text(
                                       friend.email,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF999999),
-                                      ),
+                                      style: AppTextStyles.caption,
                                     ),
                                   ],
                                 ),
@@ -136,15 +91,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                 children: [
                                   const Icon(
                                     Icons.check,
-                                    color: Color(0xFF00D95F),
-                                    size: 18,
+                                    color: AppColors.primary,
+                                    size: AppSizes.iconMD,
                                   ),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: AppSizes.paddingXXS),
                                   const Text(
                                     'Friends',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Color(0xFF00D95F),
+                                      color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),

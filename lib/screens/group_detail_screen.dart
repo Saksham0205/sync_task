@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_sizes.dart';
+import '../constants/app_text_styles.dart';
+import '../widgets/common/app_card.dart';
+import '../widgets/common/custom_checkbox.dart';
+import '../widgets/common/priority_badge.dart';
 import '../cubits/groups/groups_cubit.dart';
 
 class GroupDetailScreen extends StatefulWidget {
@@ -30,19 +36,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     }
   }
 
-  Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'High':
-        return const Color(0xFFFF5252);
-      case 'Medium':
-        return const Color(0xFFFFB74D);
-      case 'Low':
-        return const Color(0xFF00D95F);
-      default:
-        return const Color(0xFF999999);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<GroupsCubit, GroupsState>(
@@ -53,14 +46,17 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
           return Scaffold(
             appBar: AppBar(
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.textPrimary,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
             body: const Center(
               child: Text(
                 'Group not found',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.textPrimary),
               ),
             ),
           );
@@ -69,34 +65,24 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
         return Scaffold(
           appBar: AppBar(
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
               onPressed: () => Navigator.of(context).pop(),
             ),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  group.name,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                Text(group.name, style: AppTextStyles.h3),
                 Row(
                   children: [
                     const Icon(
                       Icons.people,
                       size: 14,
-                      color: Color(0xFF999999),
+                      color: AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSizes.paddingXXS),
                     Text(
                       '${group.memberCount} members',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF999999),
-                      ),
+                      style: AppTextStyles.captionSmall,
                     ),
                   ],
                 ),
@@ -105,45 +91,33 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
             actions: [
               ElevatedButton.icon(
                 onPressed: () {},
-                icon: const Icon(Icons.person_add, size: 18),
+                icon: const Icon(Icons.person_add, size: AppSizes.iconMD),
                 label: const Text('Invite'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: AppSizes.paddingSM,
+                    vertical: AppSizes.paddingXS,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSizes.paddingMD),
             ],
           ),
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(AppSizes.paddingLG),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E1E),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
+                  AppCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           'Add Group Task',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                          style: AppTextStyles.bodyLarge,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSizes.paddingSM),
                         Row(
                           children: [
                             Expanded(
@@ -151,45 +125,44 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                 controller: _taskController,
                                 decoration: const InputDecoration(
                                   hintText: 'What does the group need to do?',
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
                                 ),
                                 onSubmitted: (_) => _addTask(),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSizes.paddingSM),
                             Container(
-                              width: 48,
-                              height: 48,
+                              width: AppSizes.avatarLG,
+                              height: AppSizes.avatarLG,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF00D95F),
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(
+                                  AppSizes.radiusMD,
+                                ),
                               ),
                               child: IconButton(
                                 icon: const Icon(
                                   Icons.add,
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                 ),
                                 onPressed: _addTask,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSizes.paddingMD),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: () {},
-                            icon: const Icon(Icons.auto_awesome, size: 18),
+                            icon: const Icon(
+                              Icons.auto_awesome,
+                              size: AppSizes.iconMD,
+                            ),
                             label: const Text('Get AI Suggestions'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF8B7BF7),
-                              side: const BorderSide(color: Color(0xFF8B7BF7)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                              foregroundColor: AppColors.secondary,
+                              side: const BorderSide(
+                                color: AppColors.secondary,
                               ),
                             ),
                           ),
@@ -197,7 +170,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSizes.paddingLG),
                   Expanded(
                     child: ListView.builder(
                       itemCount: group.tasks.length,
@@ -209,22 +182,17 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                         final totalMembers = task.completedBy.length;
                         final isCompleted = task.completedBy['You'] ?? false;
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E1E1E),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.1),
-                            ),
+                        return AppCard(
+                          margin: const EdgeInsets.only(
+                            bottom: AppSizes.paddingMD,
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  GestureDetector(
+                                  CustomCheckbox(
+                                    isChecked: isCompleted,
                                     onTap: () => context
                                         .read<GroupsCubit>()
                                         .toggleTaskCompletion(
@@ -232,102 +200,36 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                           task.id,
                                           'You',
                                         ),
-                                    child: Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        color: isCompleted
-                                            ? const Color(0xFF00D95F)
-                                            : Colors.transparent,
-                                        border: Border.all(
-                                          color: isCompleted
-                                              ? const Color(0xFF00D95F)
-                                              : const Color(0xFF666666),
-                                          width: 2,
-                                        ),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: isCompleted
-                                          ? const Icon(
-                                              Icons.check,
-                                              color: Colors.white,
-                                              size: 16,
-                                            )
-                                          : null,
-                                    ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSizes.paddingSM),
                                   Expanded(
                                     child: Text(
                                       task.text,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
+                                      style: AppTextStyles.bodyLarge,
                                     ),
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _getPriorityColor(
-                                        task.priority,
-                                      ).withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.circle,
-                                          size: 8,
-                                          color: _getPriorityColor(
-                                            task.priority,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          task.priority,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: _getPriorityColor(
-                                              task.priority,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                  PriorityBadge(priority: task.priority),
                                 ],
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppSizes.paddingSM),
                               Text(
                                 'Created by ${task.createdBy}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF999999),
-                                ),
+                                style: AppTextStyles.captionSmall,
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppSizes.paddingSM),
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Completed by $completedCount of $totalMembers',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF999999),
-                                    ),
+                                    style: AppTextStyles.captionSmall,
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: AppSizes.paddingXS),
                               Wrap(
-                                spacing: 8,
+                                spacing: AppSizes.paddingXS,
                                 children: task.completedBy.entries.map((entry) {
                                   return Container(
                                     padding: const EdgeInsets.symmetric(
@@ -336,11 +238,11 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: entry.value
-                                          ? const Color(
-                                              0xFF00D95F,
-                                            ).withValues(alpha: 0.2)
-                                          : const Color(0xFF2A2A2A),
-                                      borderRadius: BorderRadius.circular(6),
+                                          ? AppColors.primary.withOpacity(0.2)
+                                          : AppColors.surfaceDark,
+                                      borderRadius: BorderRadius.circular(
+                                        AppSizes.radiusSM,
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -349,19 +251,21 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                           entry.value
                                               ? Icons.check
                                               : Icons.circle,
-                                          size: 12,
+                                          size: AppSizes.iconXS,
                                           color: entry.value
-                                              ? const Color(0xFF00D95F)
-                                              : const Color(0xFF666666),
+                                              ? AppColors.primary
+                                              : AppColors.textTertiary,
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(
+                                          width: AppSizes.paddingXXS,
+                                        ),
                                         Text(
                                           entry.key,
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: entry.value
-                                                ? const Color(0xFF00D95F)
-                                                : const Color(0xFF999999),
+                                                ? AppColors.primary
+                                                : AppColors.textSecondary,
                                           ),
                                         ),
                                       ],

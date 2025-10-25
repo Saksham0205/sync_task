@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_sizes.dart';
+import '../constants/app_text_styles.dart';
+import '../widgets/common/loading_indicator.dart';
 import '../cubits/auth/auth_cubit.dart';
 import 'main_navigation_screen.dart';
 import 'sign_in_screen.dart';
@@ -89,7 +93,7 @@ class _SplashScreenState extends State<SplashScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: AppColors.background,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -110,13 +114,13 @@ class _SplashScreenState extends State<SplashScreen>
                             width: 100,
                             height: 100,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF00D95F),
-                              borderRadius: BorderRadius.circular(24),
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(
+                                AppSizes.radiusXL,
+                              ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(
-                                    0xFF00D95F,
-                                  ).withOpacity(0.3),
+                                  color: AppColors.primary.withOpacity(0.3),
                                   blurRadius: 20,
                                   spreadRadius: 5,
                                 ),
@@ -124,28 +128,20 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                             child: const Icon(
                               Icons.check_circle_outline,
-                              size: 60,
-                              color: Colors.white,
+                              size: AppSizes.iconXXXL,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: AppSizes.radiusXL),
                           // App Name
-                          const Text(
-                            'SyncTask',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
+                          const Text('SyncTask', style: AppTextStyles.appTitle),
+                          const SizedBox(height: AppSizes.paddingXS),
                           // Tagline
                           const Text(
                             'Organize • Collaborate • Achieve',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF999999),
+                              color: AppColors.textSecondary,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -159,20 +155,8 @@ class _SplashScreenState extends State<SplashScreen>
               // Loading Indicator
               FadeTransition(
                 opacity: _fadeAnimation,
-                child: Column(
-                  children: [
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          const Color(0xFF00D95F),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 80),
-                  ],
+                child: const Column(
+                  children: [LoadingIndicator(), SizedBox(height: 80)],
                 ),
               ),
             ],

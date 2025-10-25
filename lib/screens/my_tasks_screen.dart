@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_sizes.dart';
+import '../constants/app_text_styles.dart';
+import '../widgets/common/app_card.dart';
+import '../widgets/common/custom_checkbox.dart';
+import '../widgets/common/page_header.dart';
 import '../cubits/tasks/tasks_cubit.dart';
 
 class MyTasksScreen extends StatefulWidget {
@@ -30,50 +36,27 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(AppSizes.paddingLG),
           child: BlocBuilder<TasksCubit, TasksState>(
             builder: (context, state) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'My Tasks',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  PageHeader(
+                    title: 'My Tasks',
+                    subtitle:
+                        '${state.completedCount} of ${state.tasks.length} completed',
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${state.completedCount} of ${state.tasks.length} completed',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF00D95F),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E1E),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
+                  const SizedBox(height: AppSizes.paddingLG),
+                  AppCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           'Add New Task',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                          style: AppTextStyles.bodyLarge,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSizes.paddingSM),
                         Row(
                           children: [
                             Expanded(
@@ -81,26 +64,24 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                                 controller: _taskController,
                                 decoration: const InputDecoration(
                                   hintText: 'What do you need to do?',
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
                                 ),
                                 onSubmitted: (_) => _addTask(),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSizes.paddingSM),
                             Container(
-                              width: 48,
-                              height: 48,
+                              width: AppSizes.avatarLG,
+                              height: AppSizes.avatarLG,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF00D95F),
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(
+                                  AppSizes.radiusMD,
+                                ),
                               ),
                               child: IconButton(
                                 icon: const Icon(
                                   Icons.add,
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                 ),
                                 onPressed: _addTask,
                               ),
@@ -110,61 +91,33 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSizes.paddingLG),
                   Expanded(
                     child: ListView.builder(
                       itemCount: state.tasks.length,
                       itemBuilder: (context, index) {
                         final task = state.tasks[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E1E1E),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.1),
-                            ),
+                        return AppCard(
+                          margin: const EdgeInsets.only(
+                            bottom: AppSizes.paddingSM,
                           ),
                           child: Row(
                             children: [
-                              GestureDetector(
+                              CustomCheckbox(
+                                isChecked: task.completed,
                                 onTap: () => context
                                     .read<TasksCubit>()
                                     .toggleTask(task.id),
-                                child: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: task.completed
-                                        ? const Color(0xFF00D95F)
-                                        : Colors.transparent,
-                                    border: Border.all(
-                                      color: task.completed
-                                          ? const Color(0xFF00D95F)
-                                          : const Color(0xFF666666),
-                                      width: 2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: task.completed
-                                      ? const Icon(
-                                          Icons.check,
-                                          color: Colors.white,
-                                          size: 16,
-                                        )
-                                      : null,
-                                ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: AppSizes.paddingSM),
                               Expanded(
                                 child: Text(
                                   task.text,
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: task.completed
-                                        ? const Color(0xFF666666)
-                                        : Colors.white,
+                                        ? AppColors.textTertiary
+                                        : AppColors.textPrimary,
                                     decoration: task.completed
                                         ? TextDecoration.lineThrough
                                         : null,
@@ -174,7 +127,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                               IconButton(
                                 icon: const Icon(
                                   Icons.delete_outline,
-                                  color: Color(0xFFFF5252),
+                                  color: AppColors.error,
                                 ),
                                 onPressed: () => context
                                     .read<TasksCubit>()

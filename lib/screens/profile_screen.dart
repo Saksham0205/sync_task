@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_sizes.dart';
+import '../constants/app_text_styles.dart';
+import '../widgets/common/app_card.dart';
+import '../widgets/common/page_header.dart';
+import '../widgets/common/user_avatar.dart';
 import '../cubits/auth/auth_cubit.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -11,7 +17,7 @@ class ProfileScreen extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(AppSizes.paddingLG),
             child: BlocBuilder<AuthCubit, AuthState>(
               builder: (context, authState) {
                 final user = authState is AuthAuthenticated
@@ -21,154 +27,108 @@ class ProfileScreen extends StatelessWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.1),
-                        ),
-                      ),
+                    const PageHeader(title: 'Profile'),
+                    const SizedBox(height: AppSizes.paddingXL),
+                    AppCard(
+                      padding: const EdgeInsets.all(AppSizes.paddingLG),
                       child: Column(
                         children: [
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundColor: const Color(0xFF00D95F),
-                            child: Text(
-                              user?.avatarLetter ?? 'J',
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
+                          UserAvatar(letter: user?.avatarLetter ?? 'J'),
+                          const SizedBox(height: AppSizes.paddingMD),
                           Text(
                             user?.username ?? '@john_doe',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                            style: AppTextStyles.h3,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSizes.paddingXXS),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(
                                 Icons.email_outlined,
-                                size: 16,
-                                color: Color(0xFF999999),
+                                size: AppSizes.iconSM,
+                                color: AppColors.textSecondary,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: AppSizes.paddingXXS),
                               Text(
                                 user?.email ?? 'john@example.com',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF999999),
-                                ),
+                                style: AppTextStyles.caption,
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppSizes.paddingXS),
                           Text(
                             user != null
                                 ? 'Member since ${_formatDate(user.memberSince)}'
                                 : 'Member since March 2024',
                             style: const TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF666666),
+                              color: AppColors.textTertiary,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSizes.paddingLG),
                     _buildMenuItem(
                       icon: Icons.settings_outlined,
                       title: 'Account Settings',
                       subtitle: 'Manage your account preferences',
                       onTap: () {},
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSizes.paddingSM),
                     _buildMenuItem(
                       icon: Icons.notifications_outlined,
                       title: 'Notifications',
                       subtitle: 'Configure your notification preferences',
                       onTap: () {},
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSizes.paddingSM),
                     _buildMenuItem(
                       icon: Icons.security_outlined,
                       title: 'Privacy & Security',
                       subtitle: 'Manage your privacy and security settings',
                       onTap: () {},
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSizes.paddingSM),
                     _buildMenuItem(
                       icon: Icons.help_outline,
                       title: 'Help & Support',
                       subtitle: 'Get help and contact support',
                       onTap: () {},
                     ),
-                    const SizedBox(height: 32),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF5C1919),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: InkWell(
-                        onTap: () {
-                          context.read<AuthCubit>().signOut();
-                        },
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.logout, color: Color(0xFFFF6B6B)),
-                            SizedBox(width: 8),
-                            Text(
-                              'Sign Out',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFFF6B6B),
-                              ),
+                    const SizedBox(height: AppSizes.paddingXL),
+                    AppCard(
+                      color: const Color(0xFF5C1919),
+                      onTap: () {
+                        context.read<AuthCubit>().signOut();
+                      },
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.logout, color: AppColors.error),
+                          SizedBox(width: AppSizes.paddingXS),
+                          Text(
+                            'Sign Out',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.error,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSizes.paddingLG),
                     const Center(
                       child: Column(
                         children: [
-                          Text(
-                            'SyncTask',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 4),
+                          Text('SyncTask', style: AppTextStyles.bodyLarge),
+                          SizedBox(height: AppSizes.paddingXXS),
                           Text(
                             'Version 1.0.0',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF666666),
+                              color: AppColors.textTertiary,
                             ),
                           ),
                         ],
@@ -208,52 +168,31 @@ class ProfileScreen extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return AppCard(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2A2A2A),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: Colors.white),
+      child: Row(
+        children: [
+          Container(
+            width: AppSizes.avatarLG,
+            height: AppSizes.avatarLG,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceDark,
+              borderRadius: BorderRadius.circular(AppSizes.radiusMD),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF999999),
-                    ),
-                  ),
-                ],
-              ),
+            child: Icon(icon, color: AppColors.textPrimary),
+          ),
+          const SizedBox(width: AppSizes.paddingMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTextStyles.bodyLarge),
+                const SizedBox(height: AppSizes.paddingXXS),
+                Text(subtitle, style: AppTextStyles.captionSmall),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
