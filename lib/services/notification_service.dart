@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/task.dart';
 import '../models/group.dart';
+import 'email_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -13,6 +14,7 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final EmailService _emailService = EmailService();
 
   bool _initialized = false;
 
@@ -113,6 +115,50 @@ class NotificationService {
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
+
+    // Note: Email reminders would need to be implemented via Cloud Scheduler
+    // to send exactly 30 minutes before deadline. The callable function
+    // executes immediately and cannot be scheduled for future delivery.
+  }
+
+  // Send email reminder for task deadline
+  Future<void> _sendEmailReminder({
+    required String taskText,
+    required DateTime deadline,
+    String? groupId,
+  }) async {
+    try {
+      final userEmail = await _emailService.getCurrentUserEmail();
+      final username = await _emailService.getCurrentUsername();
+
+      if (userEmail == null || username == null) {
+        print('User email or username not found for email reminder');
+        return;
+      }
+
+      String? groupName;
+      if (groupId != null) {
+        final groupDoc = await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(groupId)
+            .get();
+        if (groupDoc.exists) {
+          groupName = groupDoc.data()?['name'] as String?;
+        }
+      }
+
+      await _emailService.sendTaskDeadlineReminderEmail(
+        userEmail: userEmail,
+        username: username,
+        taskText: taskText,
+        deadline: deadline,
+        groupName: groupName,
+      );
+
+      print('Email reminder sent successfully');
+    } catch (e) {
+      print('Error sending email reminder: $e');
+    }
   }
 
   // Cancel a scheduled notification

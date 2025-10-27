@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../models/group.dart';
 import '../../models/task.dart';
 import '../../services/notification_service.dart';
+import '../../services/email_service.dart';
 
 part 'groups_state.dart';
 
@@ -13,6 +14,7 @@ class GroupsCubit extends Cubit<GroupsState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   final NotificationService _notificationService = NotificationService();
+  final EmailService _emailService = EmailService();
   StreamSubscription? _groupsSubscription;
   final Map<String, StreamSubscription> _tasksSubscriptions = {};
 
@@ -286,6 +288,56 @@ class GroupsCubit extends Cubit<GroupsState> {
       _tasksSubscriptions.remove(groupId);
     } catch (e) {
       print('Error deleting group: $e');
+    }
+  }
+
+  /// Add a member to a group and send them an email invitation
+  Future<void> addMemberToGroup({
+    required String groupId,
+    required String memberId,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // Get group info
+      final groupDoc = await _firestore.collection('groups').doc(groupId).get();
+      if (!groupDoc.exists) {
+        print('Group not found');
+        return;
+      }
+
+      final groupData = groupDoc.data()!;
+      final groupName = groupData['name'] as String;
+      final members = List<String>.from(groupData['members'] as List);
+
+      // Check if member already in group
+      if (members.contains(memberId)) {
+        print('Member already in group');
+        return;
+      }
+
+      // Get current user's username (inviter)
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final inviterUsername = userDoc.data()?['username'] ?? 'Someone';
+
+      // Add member to group
+      members.add(memberId);
+      await _firestore.collection('groups').doc(groupId).update({
+        'members': members,
+        'memberCount': members.length,
+      });
+
+      // Send email invitation
+      await _emailService.sendGroupInvitationEmail(
+        inviteeUserId: memberId,
+        inviterUsername: inviterUsername,
+        groupName: groupName,
+      );
+
+      print('Member added to group and invitation email sent');
+    } catch (e) {
+      print('Error adding member to group: $e');
     }
   }
 
