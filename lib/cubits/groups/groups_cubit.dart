@@ -265,6 +265,30 @@ class GroupsCubit extends Cubit<GroupsState> {
     }
   }
 
+  Future<void> deleteGroup(String groupId) async {
+    try {
+      // Get all tasks in the group and cancel their notifications
+      final group = getGroupById(groupId);
+      if (group != null) {
+        for (var task in group.tasks) {
+          await _notificationService.cancelNotification(
+            task.id,
+            isGroupTask: true,
+          );
+        }
+      }
+
+      // Delete the group and all its tasks
+      await _firestore.collection('groups').doc(groupId).delete();
+
+      // Cancel the tasks subscription for this group
+      _tasksSubscriptions[groupId]?.cancel();
+      _tasksSubscriptions.remove(groupId);
+    } catch (e) {
+      print('Error deleting group: $e');
+    }
+  }
+
   /// Cleans up tasks that have both "You" and the actual username
   /// This is a one-time migration to fix the data inconsistency
   Future<void> cleanupTaskMemberships(String groupId) async {
