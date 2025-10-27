@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'my_tasks_screen.dart';
 import 'groups_screen.dart';
 import 'friends_screen.dart';
-import 'profile_screen.dart';
+import 'profile/profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});

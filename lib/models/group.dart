@@ -80,6 +80,7 @@ class GroupTask extends Equatable {
   final Map<String, bool> completedBy;
   final TaskPriority priority;
   final DateTime createdAt;
+  final DateTime? deadline;
 
   const GroupTask({
     required this.id,
@@ -88,6 +89,7 @@ class GroupTask extends Equatable {
     required this.completedBy,
     this.priority = TaskPriority.medium,
     required this.createdAt,
+    this.deadline,
   });
 
   GroupTask copyWith({
@@ -97,6 +99,7 @@ class GroupTask extends Equatable {
     Map<String, bool>? completedBy,
     TaskPriority? priority,
     DateTime? createdAt,
+    DateTime? deadline,
   }) {
     return GroupTask(
       id: id ?? this.id,
@@ -105,6 +108,7 @@ class GroupTask extends Equatable {
       completedBy: completedBy ?? this.completedBy,
       priority: priority ?? this.priority,
       createdAt: createdAt ?? this.createdAt,
+      deadline: deadline ?? this.deadline,
     );
   }
 
@@ -116,6 +120,7 @@ class GroupTask extends Equatable {
       'completedBy': completedBy,
       'priority': priority.name,
       'createdAt': createdAt.toIso8601String(),
+      'deadline': deadline?.toIso8601String(),
     };
   }
 
@@ -130,6 +135,9 @@ class GroupTask extends Equatable {
         orElse: () => TaskPriority.medium,
       ),
       createdAt: DateTime.parse(json['createdAt'] as String),
+      deadline: json['deadline'] != null
+          ? DateTime.parse(json['deadline'] as String)
+          : null,
     );
   }
 
@@ -141,5 +149,6 @@ class GroupTask extends Equatable {
     completedBy,
     priority,
     createdAt,
+    deadline,
   ];
 }

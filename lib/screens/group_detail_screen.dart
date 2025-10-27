@@ -24,6 +24,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   final _taskController = TextEditingController();
   String? _currentUsername;
   TaskPriority _selectedPriority = TaskPriority.medium;
+  DateTime? _selectedDeadline;
 
   @override
   void initState() {
@@ -68,11 +69,143 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
         widget.groupId,
         _taskController.text,
         priority: _selectedPriority,
+        deadline: _selectedDeadline,
       );
       _taskController.clear();
       setState(() {
         _selectedPriority = TaskPriority.medium;
+        _selectedDeadline = null;
       });
+    }
+  }
+
+  Future<void> _selectDeadline() async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDeadline ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppColors.primary,
+              onPrimary: AppColors.textPrimary,
+              surface: AppColors.surface,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(
+          _selectedDeadline ?? DateTime.now(),
+        ),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.dark(
+                primary: AppColors.primary,
+                onPrimary: AppColors.textPrimary,
+                surface: AppColors.surface,
+                onSurface: AppColors.textPrimary,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedTime != null) {
+        setState(() {
+          _selectedDeadline = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
+    }
+  }
+
+  Future<void> _editTaskDeadline(GroupTask task) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: task.deadline ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppColors.primary,
+              onPrimary: AppColors.textPrimary,
+              surface: AppColors.surface,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(task.deadline ?? DateTime.now()),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.dark(
+                primary: AppColors.primary,
+                onPrimary: AppColors.textPrimary,
+                surface: AppColors.surface,
+                onSurface: AppColors.textPrimary,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedTime != null) {
+        final deadline = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+        context.read<GroupsCubit>().updateGroupTaskDeadline(
+          widget.groupId,
+          task.id,
+          deadline,
+        );
+      }
+    }
+  }
+
+  String _formatDeadline(DateTime deadline) {
+    final now = DateTime.now();
+    final difference = deadline.difference(now);
+
+    if (difference.isNegative) {
+      return 'Overdue';
+    }
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ${difference.inHours % 24}h';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ${difference.inMinutes % 60}m';
+    } else {
+      return '${difference.inMinutes}m';
     }
   }
 
@@ -306,6 +439,50 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                             );
                           }).toList(),
                         ),
+                        const SizedBox(height: AppSizes.paddingSM),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _selectDeadline,
+                                icon: Icon(
+                                  _selectedDeadline != null
+                                      ? Icons.schedule
+                                      : Icons.schedule_outlined,
+                                  size: AppSizes.iconSM,
+                                ),
+                                label: Text(
+                                  _selectedDeadline != null
+                                      ? 'Deadline: ${_formatDeadline(_selectedDeadline!)}'
+                                      : 'Set Deadline',
+                                  style: AppTextStyles.bodySmall,
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: _selectedDeadline != null
+                                      ? AppColors.primary
+                                      : AppColors.textSecondary,
+                                  side: BorderSide(
+                                    color: _selectedDeadline != null
+                                        ? AppColors.primary
+                                        : AppColors.textTertiary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (_selectedDeadline != null) ...[
+                              const SizedBox(width: AppSizes.paddingSM),
+                              IconButton(
+                                icon: const Icon(Icons.close, size: 20),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedDeadline = null;
+                                  });
+                                },
+                                color: AppColors.textTertiary,
+                              ),
+                            ],
+                          ],
+                        ),
                         const SizedBox(height: AppSizes.paddingMD),
                         SizedBox(
                           width: double.infinity,
@@ -380,6 +557,18 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                         _showPriorityMenu(context, task),
                                     tooltip: 'Change priority',
                                   ),
+                                  IconButton(
+                                    icon: Icon(
+                                      task.deadline != null
+                                          ? Icons.schedule
+                                          : Icons.schedule_outlined,
+                                      color: task.deadline != null
+                                          ? AppColors.secondary
+                                          : AppColors.textTertiary,
+                                    ),
+                                    onPressed: () => _editTaskDeadline(task),
+                                    tooltip: 'Set deadline',
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: AppSizes.paddingXS),
@@ -399,6 +588,33 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
+                                  if (task.deadline != null) ...[
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.schedule,
+                                      size: 14,
+                                      color:
+                                          task.deadline!.isBefore(
+                                            DateTime.now(),
+                                          )
+                                          ? AppColors.error
+                                          : AppColors.secondary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _formatDeadline(task.deadline!),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color:
+                                            task.deadline!.isBefore(
+                                              DateTime.now(),
+                                            )
+                                            ? AppColors.error
+                                            : AppColors.secondary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                               const SizedBox(height: AppSizes.paddingSM),

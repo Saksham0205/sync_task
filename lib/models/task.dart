@@ -26,6 +26,7 @@ class Task extends Equatable {
   final bool completed;
   final DateTime createdAt;
   final TaskPriority priority;
+  final DateTime? deadline;
 
   const Task({
     required this.id,
@@ -33,6 +34,7 @@ class Task extends Equatable {
     this.completed = false,
     required this.createdAt,
     this.priority = TaskPriority.medium,
+    this.deadline,
   });
 
   Task copyWith({
@@ -41,6 +43,7 @@ class Task extends Equatable {
     bool? completed,
     DateTime? createdAt,
     TaskPriority? priority,
+    DateTime? deadline,
   }) {
     return Task(
       id: id ?? this.id,
@@ -48,6 +51,7 @@ class Task extends Equatable {
       completed: completed ?? this.completed,
       createdAt: createdAt ?? this.createdAt,
       priority: priority ?? this.priority,
+      deadline: deadline ?? this.deadline,
     );
   }
 
@@ -58,6 +62,7 @@ class Task extends Equatable {
       'completed': completed,
       'createdAt': createdAt.toIso8601String(),
       'priority': priority.name,
+      'deadline': deadline?.toIso8601String(),
     };
   }
 
@@ -71,9 +76,19 @@ class Task extends Equatable {
         (p) => p.name == (json['priority'] as String?),
         orElse: () => TaskPriority.medium,
       ),
+      deadline: json['deadline'] != null
+          ? DateTime.parse(json['deadline'] as String)
+          : null,
     );
   }
 
   @override
-  List<Object?> get props => [id, text, completed, createdAt, priority];
+  List<Object?> get props => [
+    id,
+    text,
+    completed,
+    createdAt,
+    priority,
+    deadline,
+  ];
 }

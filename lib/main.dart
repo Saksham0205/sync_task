@@ -8,12 +8,16 @@ import 'cubits/auth/auth_cubit.dart';
 import 'cubits/tasks/tasks_cubit.dart';
 import 'cubits/groups/groups_cubit.dart';
 import 'cubits/friends/friends_cubit.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize Notification Service
+  await NotificationService().initialize();
 
   runApp(const SyncTaskApp());
 }

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_sizes.dart';
-import '../constants/app_text_styles.dart';
-import '../widgets/common/app_card.dart';
-import '../widgets/common/page_header.dart';
-import '../widgets/common/user_avatar.dart';
-import '../cubits/auth/auth_cubit.dart';
-import 'sign_in_screen.dart';
+import '../../constants/app_colors.dart';
+import '../../constants/app_sizes.dart';
+import '../../constants/app_text_styles.dart';
+import '../../widgets/common/app_card.dart';
+import '../../widgets/common/page_header.dart';
+import '../../widgets/common/user_avatar.dart';
+import '../../cubits/auth/auth_cubit.dart';
+import '../sign_in_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -72,7 +72,7 @@ class ProfileScreen extends StatelessWidget {
                           Text(
                             user != null
                                 ? 'Member since ${_formatDate(user.memberSince)}'
-                                : 'Member since March 2024',
+                                : 'Member since March 2025',
                             style: const TextStyle(
                               fontSize: 14,
                               color: AppColors.textTertiary,

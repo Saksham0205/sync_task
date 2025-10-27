@@ -4,12 +4,14 @@ import 'package:equatable/equatable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../models/task.dart';
+import '../../services/notification_service.dart';
 
 part 'tasks_state.dart';
 
 class TasksCubit extends Cubit<TasksState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+  final NotificationService _notificationService = NotificationService();
   StreamSubscription? _tasksSubscription;
 
   TasksCubit() : super(const TasksState()) {
@@ -46,6 +48,7 @@ class TasksCubit extends Cubit<TasksState> {
   Future<void> addTask(
     String text, {
     TaskPriority priority = TaskPriority.medium,
+    DateTime? deadline,
   }) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -56,13 +59,24 @@ class TasksCubit extends Cubit<TasksState> {
         text: text,
         createdAt: DateTime.now(),
         priority: priority,
+        deadline: deadline,
       );
 
-      await _firestore
+      final docRef = await _firestore
           .collection('users')
           .doc(user.uid)
           .collection('tasks')
           .add(task.toJson());
+
+      // Schedule notification if deadline is set
+      if (deadline != null) {
+        await _notificationService.scheduleTaskDeadlineNotification(
+          taskId: docRef.id,
+          taskText: text,
+          deadline: deadline,
+          priority: priority,
+        );
+      }
     } catch (e) {
       // Handle error - could emit error state if needed
       print('Error adding task: $e');
@@ -107,6 +121,9 @@ class TasksCubit extends Cubit<TasksState> {
     if (user == null) return;
 
     try {
+      // Cancel any scheduled notification
+      await _notificationService.cancelNotification(taskId);
+
       await _firestore
           .collection('users')
           .doc(user.uid)
@@ -115,6 +132,36 @@ class TasksCubit extends Cubit<TasksState> {
           .delete();
     } catch (e) {
       print('Error deleting task: $e');
+    }
+  }
+
+  Future<void> updateTaskDeadline(String taskId, DateTime? deadline) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('tasks')
+          .doc(taskId)
+          .update({'deadline': deadline?.toIso8601String()});
+
+      // Cancel existing notification
+      await _notificationService.cancelNotification(taskId);
+
+      // Schedule new notification if deadline is set
+      if (deadline != null) {
+        final task = state.tasks.firstWhere((t) => t.id == taskId);
+        await _notificationService.scheduleTaskDeadlineNotification(
+          taskId: taskId,
+          taskText: task.text,
+          deadline: deadline,
+          priority: task.priority,
+        );
+      }
+    } catch (e) {
+      print('Error updating task deadline: $e');
     }
   }
 

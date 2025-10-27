@@ -5,12 +5,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../models/group.dart';
 import '../../models/task.dart';
+import '../../services/notification_service.dart';
 
 part 'groups_state.dart';
 
 class GroupsCubit extends Cubit<GroupsState> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+  final NotificationService _notificationService = NotificationService();
   StreamSubscription? _groupsSubscription;
   final Map<String, StreamSubscription> _tasksSubscriptions = {};
 
@@ -109,6 +111,7 @@ class GroupsCubit extends Cubit<GroupsState> {
     String groupId,
     String taskText, {
     TaskPriority priority = TaskPriority.medium,
+    DateTime? deadline,
   }) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -124,13 +127,26 @@ class GroupsCubit extends Cubit<GroupsState> {
         'completedBy': {username: false},
         'priority': priority.name,
         'createdAt': DateTime.now().toIso8601String(),
+        'deadline': deadline?.toIso8601String(),
       };
 
-      await _firestore
+      final docRef = await _firestore
           .collection('groups')
           .doc(groupId)
           .collection('tasks')
           .add(taskData);
+
+      // Schedule notification if deadline is set
+      if (deadline != null) {
+        await _notificationService.scheduleTaskDeadlineNotification(
+          taskId: docRef.id,
+          taskText: taskText,
+          deadline: deadline,
+          priority: priority,
+          isGroupTask: true,
+          groupId: groupId,
+        );
+      }
     } catch (e) {
       print('Error adding task to group: $e');
     }
@@ -186,6 +202,58 @@ class GroupsCubit extends Cubit<GroupsState> {
       }
     } catch (e) {
       print('Error toggling task completion: $e');
+    }
+  }
+
+  Future<void> updateGroupTaskDeadline(
+    String groupId,
+    String taskId,
+    DateTime? deadline,
+  ) async {
+    try {
+      await _firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('tasks')
+          .doc(taskId)
+          .update({'deadline': deadline?.toIso8601String()});
+
+      // Cancel existing notification
+      await _notificationService.cancelNotification(taskId, isGroupTask: true);
+
+      // Schedule new notification if deadline is set
+      if (deadline != null) {
+        final group = getGroupById(groupId);
+        if (group != null) {
+          final task = group.tasks.firstWhere((t) => t.id == taskId);
+          await _notificationService.scheduleTaskDeadlineNotification(
+            taskId: taskId,
+            taskText: task.text,
+            deadline: deadline,
+            priority: task.priority,
+            isGroupTask: true,
+            groupId: groupId,
+          );
+        }
+      }
+    } catch (e) {
+      print('Error updating group task deadline: $e');
+    }
+  }
+
+  Future<void> deleteGroupTask(String groupId, String taskId) async {
+    try {
+      // Cancel any scheduled notification
+      await _notificationService.cancelNotification(taskId, isGroupTask: true);
+
+      await _firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('tasks')
+          .doc(taskId)
+          .delete();
+    } catch (e) {
+      print('Error deleting group task: $e');
     }
   }
 
